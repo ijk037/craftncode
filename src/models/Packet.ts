@@ -5,6 +5,8 @@ export type MessageType =
   | 'EVACUATION' 
   | 'WATER' 
   | 'FOOD' 
+  | 'STATUS'
+  | 'HEARTBEAT'
   | 'ACK';
 
 // 0 = CRITICAL (SOS, Medical, Trapped), 1 = URGENT (Evacuation, Water, Food), 2 = NORMAL (ACK, Status, Telemetry)

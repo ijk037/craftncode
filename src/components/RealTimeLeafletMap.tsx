@@ -12,6 +12,7 @@ import {
   Pause
 } from 'lucide-react';
 import type { CitizenSosTicket } from '../store/useMeshStore';
+import { geoDistanceKm, geoBearing } from '../utils/geo';
 
 export interface LiveGpsState {
   lat: number;
@@ -106,29 +107,8 @@ export const RealTimeLeafletMap: React.FC<RealTimeMapProps> = ({ onSelectShelter
 
   // Calculate distance & bearing from user to selected shelter
   const selectedShelter = REAL_SHELTERS.find(s => s.id === selectedShelterId) || REAL_SHELTERS[0];
-  
-  const calculateDistanceKm = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const R = 6371; // Earth radius in km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  };
-
-  const calculateBearing = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const y = Math.sin((lon2 - lon1) * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180);
-    const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
-              Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos((lon2 - lon1) * Math.PI / 180);
-    const brng = Math.atan2(y, x) * 180 / Math.PI;
-    return Math.round((brng + 360) % 360);
-  };
-
-  const distanceToTarget = calculateDistanceKm(gps.lat, gps.lng, selectedShelter.lat, selectedShelter.lng);
-  const bearingToTarget = calculateBearing(gps.lat, gps.lng, selectedShelter.lat, selectedShelter.lng);
+  const distanceToTarget = geoDistanceKm(gps.lat, gps.lng, selectedShelter.lat, selectedShelter.lng);
+  const bearingToTarget = geoBearing(gps.lat, gps.lng, selectedShelter.lat, selectedShelter.lng);
   const estimatedWalkMinutes = Math.max(1, Math.round((distanceToTarget / 4.5) * 60)); // 4.5 km/h walking speed
 
   // 1. Initialize Leaflet Map Instance with Offline Caching Tile Layer
@@ -224,7 +204,7 @@ export const RealTimeLeafletMap: React.FC<RealTimeMapProps> = ({ onSelectShelter
       m.on('click', () => {
         setSelectedShelterId(shelter.id);
         if (onSelectShelter) {
-          const d = calculateDistanceKm(gps.lat, gps.lng, shelter.lat, shelter.lng);
+          const d = geoDistanceKm(gps.lat, gps.lng, shelter.lat, shelter.lng);
           onSelectShelter(shelter.name, d);
         }
       });
@@ -309,7 +289,7 @@ export const RealTimeLeafletMap: React.FC<RealTimeMapProps> = ({ onSelectShelter
         const deltaLng = (selectedShelter.lng - prev.lng) * 0.04;
         const newLat = prev.lat + deltaLat;
         const newLng = prev.lng + deltaLng;
-        const newHeading = calculateBearing(prev.lat, prev.lng, newLat, newLng);
+        const newHeading = geoBearing(prev.lat, prev.lng, newLat, newLng);
 
         return {
           ...prev,

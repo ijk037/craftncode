@@ -1,4 +1,4 @@
-import type { StructuredSosMicroFrame } from '../ai/EdgeNLPEngine';
+import type { StructuredSosMicroFrame } from '../types';
 import type { CitizenSosTicket } from '../store/useMeshStore';
 
 export interface ChatMessage {

@@ -429,8 +429,7 @@ export const useMeshStore = create<MeshState>((set, get) => ({
   },
 
   addLog: (category, level, message, meta) => {
-    const now = new Date();
-    const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${now.getMilliseconds().toString().padStart(3, '0').slice(0, 2)}`;
+    const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const newLog: EventLogItem = {
       id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       timestamp: Date.now(),

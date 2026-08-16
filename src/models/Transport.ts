@@ -1,37 +1,19 @@
 import type { MeshPacket } from './Packet';
 import type { MeshNode } from './Node';
 import type { Incident } from './Incident';
+import { getDistance } from '../utils/geo';
 
 export interface TransmissionResult {
   success: boolean;
-  snr: number; // Signal to Noise Ratio in dB (e.g. -15 dB to +10 dB)
-  rssi: number; // Received Signal Strength Indicator in dBm (-120 to -40 dBm)
-  airtimeMs: number; // Simulated LoRa Time-on-Air (e.g. 50ms - 200ms)
+  snr: number;
+  rssi: number;
+  airtimeMs: number;
   lossReason?: 'OUT_OF_RANGE' | 'COLLISION_CONGESTION' | 'RF_DISASTER_INTERFERENCE' | 'TARGET_OFFLINE' | 'BATTERY_EXHAUSTED' | 'QUEUE_OVERFLOW';
 }
 
-export interface ITransport {
-  send(
-    packet: MeshPacket, 
-    sourceNode: MeshNode, 
-    targetNode: MeshNode, 
-    maxRangePixels: number, 
-    incidents: Incident[]
-  ): TransmissionResult;
-  
-  calculateLinkMetrics(
-    nodeA: MeshNode,
-    nodeB: MeshNode,
-    maxRangePixels: number,
-    incidents: Incident[]
-  ): { distance: number; quality: number; snr: number; rssi: number; inRange: boolean };
-}
-
-export class SimulatedTransport implements ITransport {
+export class SimulatedTransport {
   public getDistance(nodeA: { x: number; y: number }, nodeB: { x: number; y: number }): number {
-    const dx = nodeA.x - nodeB.x;
-    const dy = nodeA.y - nodeB.y;
-    return Math.sqrt(dx * dx + dy * dy);
+    return getDistance(nodeA, nodeB);
   }
 
   public getIncidentInterference(
@@ -43,8 +25,8 @@ export class SimulatedTransport implements ITransport {
     for (const incident of incidents) {
       if (!incident.active) continue;
       
-      const distA = this.getDistance(nodeA, { x: incident.epicenterX, y: incident.epicenterY });
-      const distB = this.getDistance(nodeB, { x: incident.epicenterX, y: incident.epicenterY });
+      const distA = getDistance(nodeA, { x: incident.epicenterX, y: incident.epicenterY });
+      const distB = getDistance(nodeB, { x: incident.epicenterX, y: incident.epicenterY });
       
       if (distA <= incident.radius || distB <= incident.radius) {
         maxInterference = Math.max(maxInterference, incident.rfInterferenceFactor);
@@ -59,7 +41,7 @@ export class SimulatedTransport implements ITransport {
     maxRangePixels: number,
     incidents: Incident[]
   ) {
-    const distance = this.getDistance(nodeA, nodeB);
+    const distance = getDistance(nodeA, nodeB);
     const inRange = distance <= maxRangePixels;
     
     if (!inRange) {
@@ -131,13 +113,11 @@ export class SimulatedTransport implements ITransport {
     }
 
     const channelSuccessProb = (metrics.quality / 100) * targetNode.reliability;
-    const rand = Math.random();
-
     const effectiveProb = packet.priority === 0 
       ? Math.min(0.99, channelSuccessProb * 1.25)
       : channelSuccessProb;
 
-    const success = rand <= effectiveProb;
+    const success = Math.random() <= effectiveProb;
 
     return {
       success,
@@ -146,9 +126,5 @@ export class SimulatedTransport implements ITransport {
       airtimeMs: Math.round(50 + (100 - metrics.quality) * 1.5),
       lossReason: success ? undefined : (metrics.quality < 30 ? 'RF_DISASTER_INTERFERENCE' : 'COLLISION_CONGESTION')
     };
-  }
-
-  public async receive(): Promise<MeshPacket | null> {
-    return null;
   }
 }

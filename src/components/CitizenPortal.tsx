@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useMeshStore } from '../store/useMeshStore';
-import type { MessageType } from '../models/Packet';
+import type { MessageType } from '../types';
 import { OfflineLLMModal } from './OfflineLLMModal';
 import { OfflineMapModal } from './OfflineMapModal';
 import { RealTimeOfflineMapModal } from './RealTimeOfflineMapModal';
 import { SurvivalGuideModal } from './SurvivalGuideModal';
-import type { StructuredSosMicroFrame } from '../ai/EdgeNLPEngine';
+import type { StructuredSosMicroFrame } from '../types';
 import { webLlmService } from '../services/webLlmService';
 import { 
   Check, 

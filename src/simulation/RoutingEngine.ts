@@ -3,6 +3,7 @@ import type { MeshGateway } from '../models/Gateway';
 import type { MeshPacket } from '../models/Packet';
 import type { Incident } from '../models/Incident';
 import { SimulatedTransport } from '../models/Transport';
+import { TinyMLRouter, type NodeAiDiagnostic } from '../ai/TinyMLRouter';
 
 export interface RoutingWeights {
   w1GatewayProgress: number; // default 35
@@ -33,6 +34,7 @@ export interface CandidateScore {
   congestionPenalty: number;
   hopPenalty: number;
   distanceToGateway: number;
+  successProbability?: number;
 }
 
 export class RoutingEngine {
@@ -129,6 +131,9 @@ export class RoutingEngine {
     return candidates.sort((a, b) => b.totalScore - a.totalScore);
   }
 
+  /**
+   * Evaluates AI routing and selects next hop
+   */
   public selectNextHop(
     packet: MeshPacket,
     currentNode: MeshNode,
@@ -136,8 +141,14 @@ export class RoutingEngine {
     nodesMap: Map<string, MeshNode>,
     maxRangePixels: number,
     incidents: Incident[],
-    weights: RoutingWeights = DEFAULT_ROUTING_WEIGHTS
-  ): { nextHopNode: MeshNode | null; scoreDetails?: CandidateScore; reason?: string } {
+    weights: RoutingWeights = DEFAULT_ROUTING_WEIGHTS,
+    aiMode: 'BASELINE_HEURISTIC' | 'TINYML_HYBRID' | 'PROACTIVE_AI' = 'TINYML_HYBRID'
+  ): { 
+    nextHopNode: MeshNode | null; 
+    scoreDetails?: CandidateScore; 
+    aiDiagnostic?: NodeAiDiagnostic;
+    reason?: string 
+  } {
     if (packet.isAck) {
       const sourceNode = nodesMap.get(packet.sourceNodeId);
       if (sourceNode && currentNode.neighbours.includes(sourceNode.id)) {
@@ -179,6 +190,7 @@ export class RoutingEngine {
       return { nextHopNode: null, reason: 'NO_VALID_TARGET_COORDINATES' };
     }
 
+    // 1. Calculate baseline heuristic scores
     const candidateScores = this.evaluateCandidates(
       packet,
       currentNode,
@@ -193,14 +205,73 @@ export class RoutingEngine {
       return { nextHopNode: null, reason: 'NO_ACTIVE_NEIGHBORS_IN_RANGE' };
     }
 
-    const bestCandidate = candidateScores[0];
+    // 2. Prepare feature maps for TinyML evaluation
+    const neighborNodes: MeshNode[] = [];
+    const metricsMap = new Map();
+    const gwDistMap = new Map<string, number>();
+    const heuristicScoresMap = new Map<string, number>();
 
-    if (bestCandidate.totalScore < -40 && packet.priority < 2) {
-      return { nextHopNode: null, scoreDetails: bestCandidate, reason: 'PATH_BLOCKED_STORE_AND_FORWARD' };
+    const currentDistToTarget = this.transport.getDistance(currentNode, targetCoords);
+
+    candidateScores.forEach(cs => {
+      const nbr = nodesMap.get(cs.neighborId);
+      if (nbr) {
+        neighborNodes.push(nbr);
+        const lm = this.transport.calculateLinkMetrics(currentNode, nbr, maxRangePixels, incidents);
+        metricsMap.set(nbr.id, lm);
+        gwDistMap.set(nbr.id, cs.distanceToGateway);
+        heuristicScoresMap.set(nbr.id, cs.totalScore);
+      }
+    });
+
+    // 3. Run TinyML on-node classifier
+    const aiDiagnostic = TinyMLRouter.evaluateCandidates(
+      currentNode,
+      neighborNodes,
+      metricsMap,
+      currentDistToTarget,
+      gwDistMap,
+      heuristicScoresMap,
+      aiMode
+    );
+
+    // Map probabilities back to candidate scores
+    candidateScores.forEach(cs => {
+      const aiEval = aiDiagnostic.evaluations.find(e => e.neighborId === cs.neighborId);
+      if (aiEval) {
+        cs.successProbability = aiEval.successProbability;
+      }
+    });
+
+    // Determine chosen next hop
+    let chosenCandidate = candidateScores[0];
+    if (aiMode !== 'BASELINE_HEURISTIC' && aiDiagnostic.selectedNextHopId) {
+      const aiChosen = candidateScores.find(c => c.neighborId === aiDiagnostic.selectedNextHopId);
+      if (aiChosen) {
+        chosenCandidate = aiChosen;
+      }
     }
 
-    const nextHopNode = nodesMap.get(bestCandidate.neighborId) || null;
-    return { nextHopNode, scoreDetails: bestCandidate, reason: 'HEURISTIC_OPTIMAL_HOP' };
+    if (chosenCandidate.totalScore < -40 && packet.priority < 2) {
+      return { 
+        nextHopNode: null, 
+        scoreDetails: chosenCandidate, 
+        aiDiagnostic,
+        reason: 'PATH_BLOCKED_STORE_AND_FORWARD' 
+      };
+    }
+
+    const nextHopNode = nodesMap.get(chosenCandidate.neighborId) || null;
+    const reason = aiMode === 'BASELINE_HEURISTIC' 
+      ? 'HEURISTIC_OPTIMAL_HOP' 
+      : `TINYML_PREDICTED_SUCCESS_${((chosenCandidate.successProbability || 0.9) * 100).toFixed(0)}%`;
+
+    return { 
+      nextHopNode, 
+      scoreDetails: chosenCandidate, 
+      aiDiagnostic,
+      reason 
+    };
   }
 
   public generateAckPacket(

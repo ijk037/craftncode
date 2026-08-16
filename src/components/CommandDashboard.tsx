@@ -13,7 +13,8 @@ import {
   Sliders, 
   Zap, 
   RefreshCw, 
-  PlusCircle
+  PlusCircle,
+  Bot
 } from 'lucide-react';
 
 export const CommandDashboard: React.FC = () => {
@@ -25,6 +26,8 @@ export const CommandDashboard: React.FC = () => {
   const incidents = useMeshStore(state => state.incidents);
   const weights = useMeshStore(state => state.weights);
   const selectedNodeId = useMeshStore(state => state.selectedNodeId);
+  const aiRoutingMode = useMeshStore(state => state.aiRoutingMode);
+  const setAiRoutingMode = useMeshStore(state => state.setAiRoutingMode);
 
   // Actions
   const createPacket = useMeshStore(state => state.createPacket);
@@ -118,27 +121,27 @@ export const CommandDashboard: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#0b1120] border border-slate-800 rounded-xl flex flex-col h-full overflow-hidden shadow-xl">
+    <div className="bg-[#171A19] border border-[#333b37] rounded-xl flex flex-col h-full overflow-hidden shadow-xl text-xs font-sans">
       {/* Dashboard Tab Navigation */}
-      <div className="flex border-b border-slate-800 bg-slate-900/60 p-1 gap-1 text-xs font-semibold overflow-x-auto">
+      <div className="flex border-b border-[#333b37] bg-[#1d2220] p-1 gap-1 text-xs font-semibold overflow-x-auto">
         <button
           onClick={() => setActiveTab('SOS')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
             activeTab === 'SOS'
-              ? 'bg-red-500/20 text-red-300 border border-red-500/40 shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-[#B84A3A]/20 text-[#B84A3A] border border-[#B84A3A]/40 shadow-sm font-bold'
+              : 'text-[#9CA6A0] hover:text-[#E8E6DE]'
           }`}
         >
           <AlertOctagon className="w-3.5 h-3.5" />
-          <span>SOS Generator</span>
+          <span>SOS Inject</span>
         </button>
 
         <button
           onClick={() => setActiveTab('DISASTER')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
             activeTab === 'DISASTER'
-              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-[#D49A3A]/20 text-[#D49A3A] border border-[#D49A3A]/40 shadow-sm font-bold'
+              : 'text-[#9CA6A0] hover:text-[#E8E6DE]'
           }`}
         >
           <Flame className="w-3.5 h-3.5" />
@@ -149,8 +152,8 @@ export const CommandDashboard: React.FC = () => {
           onClick={() => setActiveTab('CHAOS')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
             activeTab === 'CHAOS'
-              ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-[#879B54]/20 text-[#879B54] border border-[#879B54]/40 shadow-sm font-bold'
+              : 'text-[#9CA6A0] hover:text-[#E8E6DE]'
           }`}
         >
           <Skull className="w-3.5 h-3.5" />
@@ -161,8 +164,8 @@ export const CommandDashboard: React.FC = () => {
           onClick={() => setActiveTab('STRESS')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
             activeTab === 'STRESS'
-              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-[#3F8F78]/20 text-[#3F8F78] border border-[#3F8F78]/40 shadow-sm font-bold'
+              : 'text-[#9CA6A0] hover:text-[#E8E6DE]'
           }`}
         >
           <Zap className="w-3.5 h-3.5" />
@@ -173,8 +176,8 @@ export const CommandDashboard: React.FC = () => {
           onClick={() => setActiveTab('HEURISTICS')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
             activeTab === 'HEURISTICS'
-              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40 shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-[#879B54]/20 text-[#879B54] border border-[#879B54]/40 shadow-sm font-bold'
+              : 'text-[#9CA6A0] hover:text-[#E8E6DE]'
           }`}
         >
           <Sliders className="w-3.5 h-3.5" />
@@ -183,26 +186,26 @@ export const CommandDashboard: React.FC = () => {
       </div>
 
       {/* Tab Contents */}
-      <div className="p-4 flex-1 overflow-y-auto">
+      <div className="p-3.5 flex-1 overflow-y-auto">
         {/* TAB 1: SOS Generator */}
         {activeTab === 'SOS' && (
-          <form onSubmit={handleSendSos} className="space-y-3.5 text-xs">
+          <form onSubmit={handleSendSos} className="space-y-3 text-xs">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-200 text-sm flex items-center gap-1.5">
-                <AlertOctagon className="w-4 h-4 text-red-400" />
+              <span className="font-semibold text-[#E8E6DE] text-sm flex items-center gap-1.5 font-mono">
+                <AlertOctagon className="w-4 h-4 text-[#B84A3A]" />
                 Dispatch Emergency Message
               </span>
-              <span className="px-2 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/30 text-[10px] font-mono">
+              <span className="px-2 py-0.5 rounded bg-[#B84A3A]/20 text-[#B84A3A] border border-[#B84A3A]/40 text-[10px] font-mono font-bold">
                 PRIORITY 0 PREEMPTION
               </span>
             </div>
 
             <div>
-              <label className="block text-slate-400 mb-1 font-medium">Source Mesh Node</label>
+              <label className="block text-[#9CA6A0] mb-1 font-medium">Source Mesh Node</label>
               <select
                 value={sosSourceNode}
                 onChange={(e) => setSosSourceNode(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 font-mono text-xs focus:border-red-500 focus:outline-none"
+                className="w-full bg-[#242927] border border-[#333b37] rounded-lg px-2.5 py-1.5 text-[#E8E6DE] font-mono text-xs focus:border-[#879B54] focus:outline-none"
               >
                 <option value="">-- Auto-select Victim Node --</option>
                 {nodes.map(n => (
@@ -215,11 +218,11 @@ export const CommandDashboard: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-400 mb-1 font-medium">Incident Type</label>
+                <label className="block text-[#9CA6A0] mb-1 font-medium">Incident Type</label>
                 <select
                   value={sosType}
                   onChange={(e) => setSosType(e.target.value as MessageType)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:border-red-500 focus:outline-none"
+                  className="w-full bg-[#242927] border border-[#333b37] rounded-lg px-2.5 py-1.5 text-[#E8E6DE] text-xs focus:border-[#879B54] focus:outline-none"
                 >
                   <option value="SOS">SOS (Critical Emergency)</option>
                   <option value="MEDICAL">MEDICAL (Triage Level 1)</option>
@@ -231,33 +234,33 @@ export const CommandDashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1 font-medium">Triage Priority</label>
-                <div className="flex items-center h-[34px] px-3 bg-slate-900 border border-slate-700 rounded-lg font-mono text-slate-300">
+                <label className="block text-[#9CA6A0] mb-1 font-medium">Triage Priority</label>
+                <div className="flex items-center h-[34px] px-3 bg-[#242927] border border-[#333b37] rounded-lg font-mono text-[#E8E6DE]">
                   {sosType === 'SOS' || sosType === 'MEDICAL' || sosType === 'TRAPPED' ? (
-                    <span className="text-red-400 font-bold">Tier 0 (CRITICAL)</span>
+                    <span className="text-[#B84A3A] font-bold">Tier 0 (CRITICAL)</span>
                   ) : sosType === 'EVACUATION' || sosType === 'WATER' || sosType === 'FOOD' ? (
-                    <span className="text-amber-400 font-bold">Tier 1 (URGENT)</span>
+                    <span className="text-[#D49A3A] font-bold">Tier 1 (URGENT)</span>
                   ) : (
-                    <span className="text-blue-400 font-bold">Tier 2 (NORMAL)</span>
+                    <span className="text-[#3F8F78] font-bold">Tier 2 (NORMAL)</span>
                   )}
                 </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-slate-400 mb-1 font-medium">Payload Message</label>
+              <label className="block text-[#9CA6A0] mb-1 font-medium">Payload Message</label>
               <textarea
                 rows={2}
                 value={sosPayload}
                 onChange={(e) => setSosPayload(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-200 text-xs focus:border-red-500 focus:outline-none font-mono"
+                className="w-full bg-[#242927] border border-[#333b37] rounded-lg p-2 text-[#E8E6DE] text-xs focus:border-[#879B54] focus:outline-none font-mono"
                 placeholder="Describe victim count, injuries, hazards..."
               />
             </div>
 
             <button
               type="submit"
-              className="w-full py-2 px-3 rounded-lg bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold flex items-center justify-center gap-2 shadow-lg shadow-red-600/30 transition-all text-xs"
+              className="w-full py-2.5 px-3 rounded-xl bg-[#B84A3A] hover:bg-[#9c3d2f] text-white font-bold flex items-center justify-center gap-2 shadow-md shadow-[#B84A3A]/25 transition-all text-xs"
             >
               <Send className="w-3.5 h-3.5" />
               <span>Broadcast Mesh Packet</span>
@@ -269,15 +272,15 @@ export const CommandDashboard: React.FC = () => {
         {activeTab === 'DISASTER' && (
           <form onSubmit={handleCreateDisaster} className="space-y-3 text-xs">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-200 text-sm flex items-center gap-1.5">
-                <Flame className="w-4 h-4 text-amber-400" />
+              <span className="font-semibold text-[#E8E6DE] text-sm flex items-center gap-1.5 font-mono">
+                <Flame className="w-4 h-4 text-[#D49A3A]" />
                 Spawn Environmental Hazard
               </span>
               {incidents.length > 0 && (
                 <button
                   type="button"
                   onClick={clearIncidents}
-                  className="text-red-400 hover:text-red-300 text-[11px] font-medium"
+                  className="text-[#B84A3A] hover:text-[#9c3d2f] text-[11px] font-medium"
                 >
                   Clear All ({incidents.length})
                 </button>
@@ -286,7 +289,7 @@ export const CommandDashboard: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-400 mb-1 font-medium">Hazard Category</label>
+                <label className="block text-[#9CA6A0] mb-1 font-medium">Hazard Category</label>
                 <select
                   value={disasterType}
                   onChange={(e) => {
@@ -298,7 +301,7 @@ export const CommandDashboard: React.FC = () => {
                       t === 'FIRE' ? 'Wildfire Dense Smoke Corridor' : 'Tropical Cyclone Gale'
                     );
                   }}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:border-amber-500 focus:outline-none"
+                  className="w-full bg-[#242927] border border-[#333b37] rounded-lg px-2.5 py-1.5 text-[#E8E6DE] text-xs focus:border-[#D49A3A] focus:outline-none"
                 >
                   <option value="EARTHQUAKE">Earthquake / Tremor</option>
                   <option value="FLOOD">Flash Flood</option>
@@ -308,11 +311,11 @@ export const CommandDashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1 font-medium">Severity Level</label>
+                <label className="block text-[#9CA6A0] mb-1 font-medium">Severity Level</label>
                 <select
                   value={disasterSeverity}
                   onChange={(e) => setDisasterSeverity(e.target.value as IncidentSeverity)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:border-amber-500 focus:outline-none"
+                  className="w-full bg-[#242927] border border-[#333b37] rounded-lg px-2.5 py-1.5 text-[#E8E6DE] text-xs focus:border-[#D49A3A] focus:outline-none"
                 >
                   <option value="LOW">LOW</option>
                   <option value="MEDIUM">MEDIUM</option>
@@ -323,30 +326,30 @@ export const CommandDashboard: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-slate-400 mb-1 font-medium">Incident Name</label>
+              <label className="block text-[#9CA6A0] mb-1 font-medium">Incident Name</label>
               <input
                 type="text"
                 value={disasterName}
                 onChange={(e) => setDisasterName(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:border-amber-500 focus:outline-none"
+                className="w-full bg-[#242927] border border-[#333b37] rounded-lg px-2.5 py-1.5 text-[#E8E6DE] text-xs focus:border-[#D49A3A] focus:outline-none"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-400 mb-1 font-medium">Blast Radius: {disasterRadius} px</label>
+                <label className="block text-[#9CA6A0] mb-1 font-medium">Blast Radius: {disasterRadius} px</label>
                 <input
                   type="range"
                   min="60"
                   max="220"
                   value={disasterRadius}
                   onChange={(e) => setDisasterRadius(parseInt(e.target.value))}
-                  className="w-full accent-amber-400"
+                  className="w-full accent-[#D49A3A]"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1 font-medium">RF Noise: {(disasterRfLoss * 100).toFixed(0)}%</label>
+                <label className="block text-[#9CA6A0] mb-1 font-medium">RF Noise: {(disasterRfLoss * 100).toFixed(0)}%</label>
                 <input
                   type="range"
                   min="0.1"
@@ -354,33 +357,33 @@ export const CommandDashboard: React.FC = () => {
                   step="0.05"
                   value={disasterRfLoss}
                   onChange={(e) => setDisasterRfLoss(parseFloat(e.target.value))}
-                  className="w-full accent-amber-400"
+                  className="w-full accent-[#D49A3A]"
                 />
               </div>
             </div>
 
             <button
               type="submit"
-              className="w-full py-2 px-3 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold flex items-center justify-center gap-2 shadow-lg shadow-amber-600/30 transition-all text-xs"
+              className="w-full py-2.5 px-3 rounded-xl bg-[#D49A3A] hover:bg-[#ba842e] text-[#171A19] font-bold flex items-center justify-center gap-2 shadow-md shadow-[#D49A3A]/25 transition-all text-xs"
             >
               <PlusCircle className="w-3.5 h-3.5" />
               <span>Deploy Hazard Zone</span>
             </button>
 
             {incidents.length > 0 && (
-              <div className="pt-2 border-t border-slate-800 space-y-1.5">
-                <span className="text-[11px] font-semibold text-slate-400">ACTIVE HAZARD ZONES:</span>
+              <div className="pt-2 border-t border-[#333b37] space-y-1.5">
+                <span className="text-[11px] font-semibold text-[#9CA6A0]">ACTIVE HAZARD ZONES:</span>
                 {incidents.map(inc => (
-                  <div key={inc.id} className="flex items-center justify-between p-1.5 rounded bg-slate-900/80 border border-slate-800 text-[11px]">
+                  <div key={inc.id} className="flex items-center justify-between p-2 rounded-lg bg-[#242927] border border-[#333b37] text-[11px]">
                     <div className="flex items-center gap-1.5">
-                      <span className={`w-2 h-2 rounded-full ${inc.active ? 'bg-amber-400 animate-ping' : 'bg-slate-600'}`} />
-                      <span className="text-slate-200 font-medium">{inc.name}</span>
+                      <span className={`w-2 h-2 rounded-full ${inc.active ? 'bg-[#D49A3A] animate-ping' : 'bg-[#6b7771]'}`} />
+                      <span className="text-[#E8E6DE] font-medium">{inc.name}</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => toggleIncident(inc.id)}
-                      className={`px-2 py-0.5 rounded text-[10px] font-mono ${
-                        inc.active ? 'bg-red-500/20 text-red-300' : 'bg-slate-700 text-slate-300'
+                      className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                        inc.active ? 'bg-[#B84A3A]/20 text-[#B84A3A]' : 'bg-[#171A19] text-[#9CA6A0]'
                       }`}
                     >
                       {inc.active ? 'Disable' : 'Enable'}
@@ -396,32 +399,32 @@ export const CommandDashboard: React.FC = () => {
         {activeTab === 'CHAOS' && (
           <div className="space-y-3 text-xs">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-200 text-sm flex items-center gap-1.5">
-                <Skull className="w-4 h-4 text-purple-400" />
+              <span className="font-semibold text-[#E8E6DE] text-sm flex items-center gap-1.5 font-mono">
+                <Skull className="w-4 h-4 text-[#879B54]" />
                 Chaos Engineering Testbench
               </span>
-              <span className="text-slate-400 text-[11px]">Test Self-Healing</span>
+              <span className="text-[#879B54] text-[11px] font-mono">Test Self-Healing</span>
             </div>
 
-            <p className="text-slate-400 text-[11px]">
+            <p className="text-[#9CA6A0] text-[11px]">
               Inject hardware failures, drop batteries, or take gateways offline to test automatic reroute discovery.
             </p>
 
-            <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-2">
-              <span className="font-semibold text-purple-300 text-xs flex items-center gap-1">
+            <div className="p-3 rounded-xl bg-[#242927] border border-[#333b37] space-y-2">
+              <span className="font-semibold text-[#879B54] text-xs flex items-center gap-1 font-mono">
                 <Radio className="w-3.5 h-3.5" />
                 Relief Gateways Status:
               </span>
               <div className="space-y-1.5">
                 {gateways.map(gw => (
                   <div key={gw.id} className="flex items-center justify-between text-xs">
-                    <span className="text-slate-300">{gw.name}</span>
+                    <span className="text-[#E8E6DE]">{gw.name}</span>
                     <button
                       onClick={() => toggleGatewayStatus(gw.id)}
-                      className={`px-2.5 py-1 rounded text-xs font-semibold transition-all ${
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
                         gw.status === 'AVAILABLE'
-                          ? 'bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40'
-                          : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40'
+                          ? 'bg-[#B84A3A]/20 hover:bg-[#B84A3A]/30 text-[#B84A3A] border border-[#B84A3A]/40'
+                          : 'bg-[#3F8F78]/20 hover:bg-[#3F8F78]/30 text-[#3F8F78] border border-[#3F8F78]/40'
                       }`}
                     >
                       {gw.status === 'AVAILABLE' ? 'Simulate Outage' : 'Restore Online'}
@@ -431,15 +434,15 @@ export const CommandDashboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-2">
-              <span className="font-semibold text-slate-300 text-xs">
+            <div className="p-3 rounded-xl bg-[#242927] border border-[#333b37] space-y-2">
+              <span className="font-semibold text-[#E8E6DE] text-xs font-mono">
                 Target Node: {selectedNodeId ? nodes.find(n => n.id === selectedNodeId)?.name : 'Click a node on map'}
               </span>
               {selectedNodeId ? (
                 <div className="grid grid-cols-3 gap-2 pt-1">
                   <button
                     onClick={() => toggleNodeFailure(selectedNodeId)}
-                    className="p-1.5 rounded bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 text-[11px] font-semibold flex items-center justify-center gap-1"
+                    className="p-2 rounded-lg bg-[#B84A3A]/20 hover:bg-[#B84A3A]/30 text-[#B84A3A] border border-[#B84A3A]/40 text-[11px] font-bold flex items-center justify-center gap-1 transition-colors"
                   >
                     <Skull className="w-3 h-3" />
                     <span>Kill / Revive</span>
@@ -447,7 +450,7 @@ export const CommandDashboard: React.FC = () => {
 
                   <button
                     onClick={() => drainNodeBattery(selectedNodeId)}
-                    className="p-1.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-semibold flex items-center justify-center gap-1"
+                    className="p-2 rounded-lg bg-[#D49A3A]/20 hover:bg-[#D49A3A]/30 text-[#D49A3A] border border-[#D49A3A]/40 text-[11px] font-bold flex items-center justify-center gap-1 transition-colors"
                   >
                     <BatteryLow className="w-3 h-3" />
                     <span>Drain to 5%</span>
@@ -455,14 +458,14 @@ export const CommandDashboard: React.FC = () => {
 
                   <button
                     onClick={() => rechargeNodeBattery(selectedNodeId)}
-                    className="p-1.5 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-semibold flex items-center justify-center gap-1"
+                    className="p-2 rounded-lg bg-[#3F8F78]/20 hover:bg-[#3F8F78]/30 text-[#3F8F78] border border-[#3F8F78]/40 text-[11px] font-bold flex items-center justify-center gap-1 transition-colors"
                   >
                     <RefreshCw className="w-3 h-3" />
                     <span>Recharge</span>
                   </button>
                 </div>
               ) : (
-                <div className="text-[11px] text-slate-500 italic">
+                <div className="text-[11px] text-[#9CA6A0] italic">
                   Select any node on the canvas map to inject individual node faults.
                 </div>
               )}
@@ -472,50 +475,50 @@ export const CommandDashboard: React.FC = () => {
 
         {/* TAB 4: Stress Test */}
         {activeTab === 'STRESS' && (
-          <div className="space-y-3.5 text-xs">
+          <div className="space-y-3 text-xs">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-200 text-sm flex items-center gap-1.5">
-                <Zap className="w-4 h-4 text-cyan-400" />
+              <span className="font-semibold text-[#E8E6DE] text-sm flex items-center gap-1.5 font-mono">
+                <Zap className="w-4 h-4 text-[#879B54]" />
                 Burst Congestion Stress Test
               </span>
-              <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-mono">
+              <span className="px-2 py-0.5 rounded bg-[#879B54]/20 text-[#879B54] border border-[#879B54]/40 text-[10px] font-mono font-bold">
                 CONCURRENCY BENCH
               </span>
             </div>
 
-            <p className="text-slate-400 text-[11px]">
+            <p className="text-[#9CA6A0] text-[11px]">
               Inject massive packet bursts simultaneously to evaluate queue congestion, drop-tail buffers, and Tier-0 SOS priority preemption in real-time.
             </p>
 
             <div className="grid grid-cols-3 gap-2.5">
               <button
                 onClick={() => triggerStressTest(100)}
-                className="p-3 rounded-xl bg-slate-900 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex flex-col items-center gap-1.5 transition-all group"
+                className="p-3 rounded-xl bg-[#242927] hover:bg-[#2f3533] text-[#3F8F78] border border-[#333b37] hover:border-[#3F8F78]/40 flex flex-col items-center gap-1.5 transition-all group"
               >
                 <span className="text-base font-bold font-mono group-hover:scale-110 transition-transform">100</span>
-                <span className="text-[10px] text-slate-400">Light Burst</span>
+                <span className="text-[10px] text-[#9CA6A0]">Light Burst</span>
               </button>
 
               <button
                 onClick={() => triggerStressTest(500)}
-                className="p-3 rounded-xl bg-slate-900 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 flex flex-col items-center gap-1.5 transition-all group"
+                className="p-3 rounded-xl bg-[#242927] hover:bg-[#2f3533] text-[#D49A3A] border border-[#333b37] hover:border-[#D49A3A]/40 flex flex-col items-center gap-1.5 transition-all group"
               >
                 <span className="text-base font-bold font-mono group-hover:scale-110 transition-transform">500</span>
-                <span className="text-[10px] text-slate-400">Heavy Storm</span>
+                <span className="text-[10px] text-[#9CA6A0]">Heavy Storm</span>
               </button>
 
               <button
                 onClick={() => triggerStressTest(1000)}
-                className="p-3 rounded-xl bg-slate-900 hover:bg-red-500/20 text-red-300 border border-red-500/30 flex flex-col items-center gap-1.5 transition-all group"
+                className="p-3 rounded-xl bg-[#242927] hover:bg-[#2f3533] text-[#B84A3A] border border-[#333b37] hover:border-[#B84A3A]/40 flex flex-col items-center gap-1.5 transition-all group"
               >
                 <span className="text-base font-bold font-mono group-hover:scale-110 transition-transform">1,000</span>
-                <span className="text-[10px] text-slate-400">Extreme Flood</span>
+                <span className="text-[10px] text-[#9CA6A0]">Extreme Flood</span>
               </button>
             </div>
 
-            <div className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-[11px] text-slate-400 space-y-1">
-              <span className="font-semibold text-slate-200">Test Invariants:</span>
-              <ul className="list-disc pl-4 space-y-0.5 text-slate-400">
+            <div className="p-3 rounded-xl bg-[#242927] border border-[#333b37] text-[11px] text-[#9CA6A0] space-y-1">
+              <span className="font-semibold text-[#E8E6DE] font-mono">Test Invariants:</span>
+              <ul className="list-disc pl-4 space-y-0.5 text-[#9CA6A0]">
                 <li>Priority 0 SOS packets will never be dropped if Priority 2 packets exist in queue.</li>
                 <li>Congested nodes automatically alert upstream routing engines.</li>
                 <li>Drop-tail triggers when node buffer reaches max capacity (50).</li>
@@ -528,35 +531,87 @@ export const CommandDashboard: React.FC = () => {
         {activeTab === 'HEURISTICS' && (
           <div className="space-y-3 text-xs">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-200 text-sm flex items-center gap-1.5">
-                <Sliders className="w-4 h-4 text-blue-400" />
+              <span className="font-semibold text-[#E8E6DE] text-sm flex items-center gap-1.5 font-mono">
+                <Sliders className="w-4 h-4 text-[#879B54]" />
                 Multi-Attribute Routing Weights
               </span>
             </div>
 
-            <div className="flex items-center gap-1.5 pb-2 border-b border-slate-800">
-              <span className="text-slate-400 text-[11px]">Presets:</span>
+            {/* Distributed AI Routing Mode Switcher */}
+            <div className="p-3 rounded-xl bg-[#171A19] border border-[#879B54]/40 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-xs text-[#E8E6DE] flex items-center gap-1.5 font-mono">
+                  <Bot className="w-3.5 h-3.5 text-[#879B54]" />
+                  Distributed Routing Mode
+                </span>
+                <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#879B54]/20 text-[#879B54]">
+                  {aiRoutingMode}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setAiRoutingMode('BASELINE_HEURISTIC')}
+                  className={`p-1.5 rounded-lg text-center font-mono text-[10px] border transition-all ${
+                    aiRoutingMode === 'BASELINE_HEURISTIC'
+                      ? 'bg-[#242927] border-[#879B54] text-[#E8E6DE] font-bold shadow-sm'
+                      : 'bg-[#171A19] border-[#333b37] text-[#9CA6A0]'
+                  }`}
+                >
+                  Baseline Formula
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAiRoutingMode('TINYML_HYBRID')}
+                  className={`p-1.5 rounded-lg text-center font-mono text-[10px] border transition-all ${
+                    aiRoutingMode === 'TINYML_HYBRID'
+                      ? 'bg-[#879B54]/20 border-[#879B54] text-[#879B54] font-bold shadow-sm'
+                      : 'bg-[#171A19] border-[#333b37] text-[#9CA6A0]'
+                  }`}
+                >
+                  TinyML Hybrid
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAiRoutingMode('PROACTIVE_AI')}
+                  className={`p-1.5 rounded-lg text-center font-mono text-[10px] border transition-all ${
+                    aiRoutingMode === 'PROACTIVE_AI'
+                      ? 'bg-[#3F8F78]/20 border-[#3F8F78] text-[#3F8F78] font-bold shadow-sm'
+                      : 'bg-[#171A19] border-[#333b37] text-[#9CA6A0]'
+                  }`}
+                >
+                  Proactive AI
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Weight Presets */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+              <span className="text-[#9CA6A0] text-[11px] shrink-0">Presets:</span>
               <button
                 onClick={() => applyWeightPreset('BALANCED')}
-                className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px]"
+                className="px-2 py-0.5 rounded bg-[#242927] hover:bg-[#2f3533] text-[#E8E6DE] border border-[#333b37] text-[10px] font-bold"
               >
                 Balanced
               </button>
               <button
                 onClick={() => applyWeightPreset('ENERGY')}
-                className="px-2 py-0.5 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-[10px]"
+                className="px-2 py-0.5 rounded bg-[#3F8F78]/20 hover:bg-[#3F8F78]/30 text-[#3F8F78] border border-[#3F8F78]/40 text-[10px] font-bold"
               >
                 Energy Saver
               </button>
               <button
                 onClick={() => applyWeightPreset('RELIABILITY')}
-                className="px-2 py-0.5 rounded bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 text-[10px]"
+                className="px-2 py-0.5 rounded bg-[#879B54]/20 hover:bg-[#879B54]/30 text-[#879B54] border border-[#879B54]/40 text-[10px] font-bold"
               >
                 Max Reliability
               </button>
               <button
                 onClick={() => applyWeightPreset('SPEED')}
-                className="px-2 py-0.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-[10px]"
+                className="px-2 py-0.5 rounded bg-[#D49A3A]/20 hover:bg-[#D49A3A]/30 text-[#D49A3A] border border-[#D49A3A]/40 text-[10px] font-bold"
               >
                 Low Latency
               </button>
@@ -565,8 +620,8 @@ export const CommandDashboard: React.FC = () => {
             <div className="space-y-2.5">
               <div>
                 <div className="flex justify-between text-[11px] mb-0.5">
-                  <span className="text-slate-300">W1: Gateway Progress</span>
-                  <span className="font-mono text-cyan-300">{weights.w1GatewayProgress}</span>
+                  <span className="text-[#E8E6DE]">W1: Gateway Progress</span>
+                  <span className="font-mono text-[#879B54] font-bold">{weights.w1GatewayProgress}</span>
                 </div>
                 <input
                   type="range"
@@ -574,14 +629,14 @@ export const CommandDashboard: React.FC = () => {
                   max="80"
                   value={weights.w1GatewayProgress}
                   onChange={(e) => setWeights({ w1GatewayProgress: parseInt(e.target.value) })}
-                  className="w-full accent-cyan-400"
+                  className="w-full accent-[#879B54]"
                 />
               </div>
 
               <div>
                 <div className="flex justify-between text-[11px] mb-0.5">
-                  <span className="text-slate-300">W2: Link Quality (SNR/RSSI)</span>
-                  <span className="font-mono text-emerald-300">{weights.w2LinkQuality}</span>
+                  <span className="text-[#E8E6DE]">W2: Link Quality (SNR/RSSI)</span>
+                  <span className="font-mono text-[#3F8F78] font-bold">{weights.w2LinkQuality}</span>
                 </div>
                 <input
                   type="range"
@@ -589,14 +644,14 @@ export const CommandDashboard: React.FC = () => {
                   max="80"
                   value={weights.w2LinkQuality}
                   onChange={(e) => setWeights({ w2LinkQuality: parseInt(e.target.value) })}
-                  className="w-full accent-emerald-400"
+                  className="w-full accent-[#3F8F78]"
                 />
               </div>
 
               <div>
                 <div className="flex justify-between text-[11px] mb-0.5">
-                  <span className="text-slate-300">W3: Battery Health</span>
-                  <span className="font-mono text-amber-300">{weights.w3BatteryHealth}</span>
+                  <span className="text-[#E8E6DE]">W3: Battery Health</span>
+                  <span className="font-mono text-[#D49A3A] font-bold">{weights.w3BatteryHealth}</span>
                 </div>
                 <input
                   type="range"
@@ -604,14 +659,14 @@ export const CommandDashboard: React.FC = () => {
                   max="80"
                   value={weights.w3BatteryHealth}
                   onChange={(e) => setWeights({ w3BatteryHealth: parseInt(e.target.value) })}
-                  className="w-full accent-amber-400"
+                  className="w-full accent-[#D49A3A]"
                 />
               </div>
 
               <div>
                 <div className="flex justify-between text-[11px] mb-0.5">
-                  <span className="text-slate-300">W4: Node Reliability</span>
-                  <span className="font-mono text-purple-300">{weights.w4Reliability}</span>
+                  <span className="text-[#E8E6DE]">W4: Node Reliability</span>
+                  <span className="font-mono text-[#879B54] font-bold">{weights.w4Reliability}</span>
                 </div>
                 <input
                   type="range"
@@ -619,14 +674,14 @@ export const CommandDashboard: React.FC = () => {
                   max="80"
                   value={weights.w4Reliability}
                   onChange={(e) => setWeights({ w4Reliability: parseInt(e.target.value) })}
-                  className="w-full accent-purple-400"
+                  className="w-full accent-[#879B54]"
                 />
               </div>
 
               <div>
                 <div className="flex justify-between text-[11px] mb-0.5">
-                  <span className="text-slate-300">W5: Congestion Penalty</span>
-                  <span className="font-mono text-orange-300">{weights.w5Congestion}</span>
+                  <span className="text-[#E8E6DE]">W5: Congestion Penalty</span>
+                  <span className="font-mono text-[#D49A3A] font-bold">{weights.w5Congestion}</span>
                 </div>
                 <input
                   type="range"
@@ -634,14 +689,14 @@ export const CommandDashboard: React.FC = () => {
                   max="80"
                   value={weights.w5Congestion}
                   onChange={(e) => setWeights({ w5Congestion: parseInt(e.target.value) })}
-                  className="w-full accent-orange-400"
+                  className="w-full accent-[#D49A3A]"
                 />
               </div>
 
               <div>
                 <div className="flex justify-between text-[11px] mb-0.5">
-                  <span className="text-slate-300">W6: Hop Penalty (Loop Avoidance)</span>
-                  <span className="font-mono text-red-300">{weights.w6HopPenalty}</span>
+                  <span className="text-[#E8E6DE]">W6: Hop Penalty (Loop Avoidance)</span>
+                  <span className="font-mono text-[#B84A3A] font-bold">{weights.w6HopPenalty}</span>
                 </div>
                 <input
                   type="range"
@@ -649,7 +704,7 @@ export const CommandDashboard: React.FC = () => {
                   max="80"
                   value={weights.w6HopPenalty}
                   onChange={(e) => setWeights({ w6HopPenalty: parseInt(e.target.value) })}
-                  className="w-full accent-red-400"
+                  className="w-full accent-[#B84A3A]"
                 />
               </div>
             </div>

@@ -7,10 +7,13 @@ import {
   Radio, 
   Layers, 
   Wifi, 
-  BatteryMedium,
-  UserCheck,
-  Shield,
-  LifeBuoy
+  BatteryMedium, 
+  BatteryCharging,
+  UserCheck, 
+  LifeBuoy,
+  Smartphone,
+  Lock,
+  Signal
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -21,6 +24,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
+  onOpenSmsModal,
   onOpenScenarios, 
   onSwitchToCitizen, 
   onOpenAuthorityLogin 
@@ -36,75 +40,135 @@ export const Header: React.FC<HeaderProps> = ({
   const resetSimulation = useMeshStore(state => state.resetSimulation);
   const setRangeKm = useMeshStore(state => state.setRangeKm);
   const setTickSpeed = useMeshStore(state => state.setTickSpeed);
+  const setActiveRole = useMeshStore(state => state.setActiveRole);
 
   const healthyNodesCount = nodes.filter(n => n.status === 'HEALTHY' || n.status === 'LOW_BATTERY').length;
 
-  return (
-    <header className="w-full bg-[#0b1120] border-b border-slate-800 px-4 py-2.5 flex flex-wrap items-center justify-between gap-4 select-none z-30 shadow-md">
-      {/* Brand & Project Identity */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20 text-white font-bold">
-          <Radio className="w-5 h-5" />
-          <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#0b1120] animate-pulse" />
-        </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-base font-bold tracking-tight text-white flex items-center gap-1.5">
-              RESQ-MESH
-              <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                {activeRole === 'AUTHORITY' ? 'AUTHORITY OPS' : 'PUBLIC SOS'}
-              </span>
-            </h1>
+  // ==========================================
+  // 1. CITIZEN MODE HEADER (Calm + Trustworthy)
+  // ==========================================
+  if (activeRole === 'CITIZEN') {
+    return (
+      <header className="w-full h-14 md:h-16 bg-[#E9E5DC] border-b border-[#d8d1c3] px-3 md:px-6 flex items-center justify-between gap-2 md:gap-4 select-none z-40 shadow-sm shrink-0">
+        {/* Brand & Offline Beacon Status */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-[#173F35] text-[#F5F3EE] flex items-center justify-center shadow-sm shrink-0">
+            <Radio className="w-5 h-5 text-[#F5F3EE]" />
           </div>
-          <p className="text-xs text-slate-400 font-medium">
-            {activeRole === 'AUTHORITY' 
-              ? 'Authorized Tactical Mesh Routing & Chaos Command' 
-              : 'Decentralized Self-Healing Disaster Mesh Network'}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h1 className="text-sm md:text-base font-bold tracking-tight text-[#173F35] font-mono leading-none">
+                RESQ-MESH
+              </h1>
+              <span className="hidden sm:inline-flex text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#173F35]/10 text-[#173F35] border border-[#173F35]/20 uppercase">
+                BLE & LoRa Mesh Radio
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] text-[#6F8F7D] font-medium truncate mt-0.5">
+              <span className="w-2 h-2 rounded-full bg-[#3F8F78] animate-pulse shrink-0" />
+              <span className="truncate">Device-to-Device BLE & Wi-Fi Direct • Zero Internet Required</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Center: Range Badge (Visible on Tablet & Desktop) */}
+        <div className="hidden lg:flex items-center gap-2 bg-[#F5F3EE] px-3 py-1 rounded-xl border border-[#d8d1c3] text-xs text-[#252826]">
+          <Signal className="w-3.5 h-3.5 text-[#173F35]" />
+          <span className="font-mono text-[11px]">
+            LoRa Range: <strong className="text-[#173F35]">{simulatedRangeKm.toFixed(1)} km</strong>
+          </span>
+        </div>
+
+        {/* Right Actions: Battery, SMS Bridge, Authority Sign-In / Command Center */}
+        <div className="flex items-center gap-1.5 md:gap-2.5 shrink-0">
+          {/* Simulated Phone Battery */}
+          <div className="flex items-center gap-1 text-xs text-[#252826] font-mono bg-[#F5F3EE] px-2 md:px-2.5 py-1 rounded-lg border border-[#d8d1c3]">
+            <BatteryCharging className="w-3.5 h-3.5 text-[#173F35]" />
+            <span className="font-bold">94%</span>
+          </div>
+
+          {/* SMS Bridge Button */}
+          <button
+            onClick={onOpenSmsModal}
+            className="px-2 md:px-2.5 py-1 rounded-lg bg-[#F5F3EE] hover:bg-[#ded8cd] text-[#252826] text-xs font-semibold border border-[#d8d1c3] flex items-center gap-1 transition-all"
+            title="Non-Smartphone SMS Gateway"
+          >
+            <Smartphone className="w-3.5 h-3.5 text-[#6F8F7D]" />
+            <span className="hidden sm:inline">SMS Bridge</span>
+          </button>
+
+          {/* Authority Sign-In / Command Center Access Button */}
+          <button
+            onClick={() => {
+              if (authAuthority) {
+                setActiveRole('AUTHORITY');
+              } else {
+                onOpenAuthorityLogin();
+              }
+            }}
+            className="px-2.5 md:px-3 py-1 md:py-1.5 rounded-lg bg-[#173F35] hover:bg-[#102d26] text-[#F5F3EE] border border-[#173F35] text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+          >
+            <Lock className="w-3.5 h-3.5 text-[#C65D32]" />
+            {authAuthority ? (
+              <>
+                <span className="hidden xs:inline">Command</span>
+                <span>Center</span>
+              </>
+            ) : (
+              <>
+                <span className="hidden xs:inline">Authority</span>
+                <span>Sign-In</span>
+              </>
+            )}
+          </button>
+        </div>
+      </header>
+    );
+  }
+
+  // ===============================================
+  // 2. COMMAND CENTER HEADER (Operational + High Contrast)
+  // ===============================================
+  return (
+    <header className="w-full h-14 md:h-16 bg-[#171A19] border-b border-[#333b37] px-3 md:px-5 flex items-center justify-between gap-2 md:gap-4 select-none z-40 shadow-md shrink-0">
+      {/* Brand & Mode Switcher */}
+      <div className="flex items-center gap-2 md:gap-3 min-w-0">
+        <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-[#879B54] to-[#3F8F78] text-[#171A19] flex items-center justify-center shadow-md shrink-0">
+          <Radio className="w-5 h-5 text-[#171A19]" />
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 md:gap-2">
+            <h1 className="text-sm md:text-base font-bold tracking-tight text-[#E8E6DE] font-mono leading-none">
+              RESQ-MESH
+            </h1>
+            <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-[#879B54]/20 text-[#879B54] border border-[#879B54]/40 font-bold">
+              OPS
+            </span>
+          </div>
+          <p className="text-[11px] text-[#9CA6A0] font-medium truncate hidden sm:block mt-0.5">
+            Tactical Mesh Routing & Telemetry Command
           </p>
         </div>
-      </div>
 
-      {/* Role Navigation Toggle (Citizen vs Authority) */}
-      <div className="flex items-center gap-2 bg-slate-950/80 p-1 rounded-xl border border-slate-800">
+        {/* Quick Switch to Public Portal */}
         <button
           onClick={onSwitchToCitizen}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-            activeRole === 'CITIZEN'
-              ? 'bg-red-500/20 text-red-300 border border-red-500/40 shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
+          className="ml-1 md:ml-2 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#242927] hover:bg-[#2f3533] text-[#9CA6A0] hover:text-[#E8E6DE] border border-[#333b37] flex items-center gap-1.5 transition-all shrink-0"
+          title="Switch to Citizen Public Portal"
         >
-          <LifeBuoy className="w-3.5 h-3.5" />
-          <span>Citizen SOS Portal</span>
-        </button>
-
-        <button
-          onClick={() => {
-            if (authAuthority) {
-              useMeshStore.setState({ activeRole: 'AUTHORITY' });
-            } else {
-              onOpenAuthorityLogin();
-            }
-          }}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-            activeRole === 'AUTHORITY'
-              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Shield className="w-3.5 h-3.5" />
-          <span>Command Center {authAuthority ? '✓' : '(Login)'}</span>
+          <LifeBuoy className="w-3.5 h-3.5 text-[#D49A3A]" />
+          <span className="hidden md:inline">Citizen Portal</span>
         </button>
       </div>
 
-      {/* Primary Hardware Constraints & Range Controller */}
-      <div className="hidden md:flex items-center gap-4 bg-slate-900/80 px-3.5 py-1.5 rounded-xl border border-slate-800">
+      {/* Center: Range & Battery Hardware Constraints (Tablet & Desktop) */}
+      <div className="hidden lg:flex items-center gap-3 bg-[#242927] px-3.5 py-1.5 rounded-xl border border-[#333b37] shrink-0">
         <div className="flex items-center gap-2">
-          <Wifi className="w-4 h-4 text-cyan-400" />
+          <Wifi className="w-3.5 h-3.5 text-[#879B54]" />
           <div className="flex flex-col">
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="text-slate-400 font-medium">Simulated communication range:</span>
-              <span className="font-mono text-cyan-300 font-bold ml-1.5">{simulatedRangeKm.toFixed(1)} km</span>
+            <div className="flex items-center justify-between text-[10px] leading-tight">
+              <span className="text-[#9CA6A0]">Range:</span>
+              <span className="font-mono text-[#E8E6DE] font-bold ml-1">{simulatedRangeKm.toFixed(1)} km</span>
             </div>
             <input
               type="range"
@@ -113,61 +177,64 @@ export const Header: React.FC<HeaderProps> = ({
               step="0.5"
               value={simulatedRangeKm}
               onChange={(e) => setRangeKm(parseFloat(e.target.value))}
-              className="w-32 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+              className="w-20 h-1 bg-[#171A19] rounded appearance-none cursor-pointer accent-[#879B54]"
             />
           </div>
         </div>
 
-        <div className="h-6 w-px bg-slate-800" />
+        <div className="h-5 w-px bg-[#333b37]" />
 
-        <div className="flex items-center gap-2">
-          <BatteryMedium className="w-4 h-4 text-emerald-400" />
-          <div className="flex flex-col text-[11px]">
-            <span className="text-slate-400 font-medium">Simulated Battery</span>
-            <span className="font-mono text-emerald-300 font-bold">
-              {healthyNodesCount}/{nodes.length} Nodes Active
-            </span>
-          </div>
+        <div className="flex items-center gap-1.5 text-[11px]">
+          <BatteryMedium className="w-3.5 h-3.5 text-[#3F8F78]" />
+          <span className="font-mono text-[#3F8F78] font-bold">
+            {healthyNodesCount}/{nodes.length} Nodes
+          </span>
         </div>
       </div>
 
-      {/* Authority Operator Profile / Simulation Clock Actions */}
-      <div className="flex items-center gap-2">
-        {activeRole === 'AUTHORITY' && authAuthority && (
-          <div className="hidden xl:flex items-center gap-2 px-2.5 py-1 rounded-lg bg-cyan-950/40 border border-cyan-500/30 text-xs">
-            <UserCheck className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="font-bold text-slate-200">{authAuthority.name}</span>
-            <span className="text-[10px] font-mono text-cyan-400">({authAuthority.badgeId})</span>
-          </div>
+      {/* Right: Clearance Profile, Demo Scenarios, Simulation Clock */}
+      <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
+        {/* Authority Operator Badge / Switch Operator */}
+        {authAuthority && (
+          <button
+            onClick={onOpenAuthorityLogin}
+            className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#242927] hover:bg-[#2f3533] border border-[#879B54]/40 text-xs transition-colors"
+            title="Click to Switch Authority Operator"
+          >
+            <UserCheck className="w-3.5 h-3.5 text-[#879B54]" />
+            <span className="font-bold text-[#E8E6DE]">{authAuthority.name}</span>
+            <span className="text-[10px] font-mono text-[#879B54]">({authAuthority.badgeId})</span>
+          </button>
         )}
 
         {/* Demo Scenarios Button */}
         <button
           onClick={onOpenScenarios}
-          className="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
+          className="px-2.5 md:px-3 py-1 md:py-1.5 rounded-lg bg-[#242927] hover:bg-[#2f3533] text-[#E8E6DE] border border-[#333b37] hover:border-[#879B54]/50 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
+          title="Open Pre-Configured Test Scenarios"
         >
-          <Layers className="w-3.5 h-3.5" />
-          <span>Demo Scenarios</span>
+          <Layers className="w-3.5 h-3.5 text-[#879B54]" />
+          <span className="hidden sm:inline">Scenarios</span>
         </button>
 
         {/* Play/Pause Button */}
         <button
           onClick={toggleSimulation}
-          className={`p-2 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-all shadow-md ${
+          className={`p-1.5 md:p-2 rounded-lg font-bold text-xs flex items-center gap-1 transition-all shadow-sm ${
             isRunning 
-              ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40' 
-              : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40'
+              ? 'bg-[#D49A3A]/20 hover:bg-[#D49A3A]/30 text-[#D49A3A] border border-[#D49A3A]/40' 
+              : 'bg-[#3F8F78]/20 hover:bg-[#3F8F78]/30 text-[#3F8F78] border border-[#3F8F78]/40'
           }`}
           title={isRunning ? 'Pause Clock' : 'Resume Clock'}
         >
-          {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+          {isRunning ? <Pause className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <Play className="w-3.5 h-3.5 md:w-4 md:h-4" />}
         </button>
 
         {/* Speed Selector */}
         <select
           value={tickSpeed}
           onChange={(e) => setTickSpeed(parseInt(e.target.value, 10))}
-          className="bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 rounded-lg px-2 py-1.5 text-xs font-mono focus:outline-none focus:border-cyan-500 cursor-pointer"
+          className="bg-[#242927] hover:bg-[#2f3533] text-[#E8E6DE] border border-[#333b37] rounded-lg px-1.5 md:px-2 py-1 md:py-1.5 text-xs font-mono focus:outline-none focus:border-[#879B54] cursor-pointer"
         >
           <option value="600">0.5x</option>
           <option value="300">1.0x</option>
@@ -178,10 +245,10 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Reset Button */}
         <button
           onClick={resetSimulation}
-          className="p-2 rounded-lg bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-300 border border-slate-700 hover:border-red-500/30 text-xs transition-all"
+          className="p-1.5 md:p-2 rounded-lg bg-[#242927] hover:bg-[#B84A3A]/20 text-[#9CA6A0] hover:text-[#B84A3A] border border-[#333b37] hover:border-[#B84A3A]/40 text-xs transition-all"
           title="Reset Simulation"
         >
-          <RotateCcw className="w-4 h-4" />
+          <RotateCcw className="w-3.5 h-3.5 md:w-4 md:h-4" />
         </button>
       </div>
     </header>

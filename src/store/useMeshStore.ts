@@ -9,6 +9,7 @@ import { RoutingEngine, type RoutingWeights, DEFAULT_ROUTING_WEIGHTS } from '../
 import { QueueEngine } from '../simulation/QueueEngine';
 import { FailureEngine } from '../simulation/FailureEngine';
 import { SimulatedTransport } from '../models/Transport';
+import type { NodeAiDiagnostic } from '../ai/TinyMLRouter';
 
 export type AppUserRole = 'CITIZEN' | 'AUTHORITY';
 
@@ -106,8 +107,13 @@ interface MeshState {
   scenarioStep: number;
   scenarioDescription: string;
 
+  // Distributed AI Layer
+  nodeAiDiagnostics: Record<string, NodeAiDiagnostic>;
+  aiRoutingMode: 'BASELINE_HEURISTIC' | 'TINYML_HYBRID' | 'PROACTIVE_AI';
+
   // Actions
   setActiveRole: (role: AppUserRole) => void;
+  setAiRoutingMode: (mode: 'BASELINE_HEURISTIC' | 'TINYML_HYBRID' | 'PROACTIVE_AI') => void;
   loginAuthority: (user: AuthorityUser) => void;
   logoutAuthority: () => void;
   
@@ -220,9 +226,16 @@ export const useMeshStore = create<MeshState>((set, get) => ({
   activeScenarioId: null,
   scenarioStep: 0,
   scenarioDescription: '',
+  nodeAiDiagnostics: {},
+  aiRoutingMode: 'TINYML_HYBRID',
 
   setActiveRole: (role) => {
     set({ activeRole: role });
+  },
+
+  setAiRoutingMode: (mode) => {
+    set({ aiRoutingMode: mode });
+    get().addLog('SYSTEM', 'INFO', `Distributed AI Routing Mode switched to: ${mode}`);
   },
 
   loginAuthority: (user) => {
@@ -1109,15 +1122,22 @@ export const useMeshStore = create<MeshState>((set, get) => ({
       const packetToDispatch = queueEngine.peekNextPacket(q);
       if (!packetToDispatch || packetToDispatch.inTransit) continue;
 
-      const { nextHopNode, scoreDetails, reason } = routingEngine.selectNextHop(
+      const { aiRoutingMode, nodeAiDiagnostics } = get();
+
+      const { nextHopNode, scoreDetails, aiDiagnostic, reason } = routingEngine.selectNextHop(
         packetToDispatch,
         node,
         gateways,
         nodesMap,
         maxRangePixels,
         incidents,
-        weights
+        weights,
+        aiRoutingMode
       );
+
+      if (aiDiagnostic) {
+        nodeAiDiagnostics[node.id] = aiDiagnostic;
+      }
 
       if (nextHopNode) {
         const txResult = transport.send(packetToDispatch, node, nextHopNode, maxRangePixels, incidents);

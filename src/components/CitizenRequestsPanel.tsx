@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useMeshStore } from '../store/useMeshStore';
+import { webLlmService } from '../services/webLlmService';
 import { 
   AlertOctagon, 
   MapPin, 
@@ -11,7 +12,9 @@ import {
   Truck,
   CheckCircle2,
   Bot,
-  Sparkles
+  Sparkles,
+  Zap,
+  RefreshCw
 } from 'lucide-react';
 
 interface CitizenRequestsPanelProps {
@@ -35,6 +38,26 @@ export const CitizenRequestsPanel: React.FC<CitizenRequestsPanelProps> = ({ onTr
   const [directiveText, setDirectiveText] = useState<string>('Rescue en route. ETA 15m. Stay visible.');
   const [chatInputs, setChatInputs] = useState<Record<string, string>>({});
   const [showHistory, setShowHistory] = useState<boolean>(false);
+
+  // Real LLM Tactical Triage State
+  const [isGeneratingAiTriage, setIsGeneratingAiTriage] = useState<boolean>(false);
+  const [aiTriageOutput, setAiTriageOutput] = useState<string>('');
+
+  const handleGenerateRealTriage = async () => {
+    if (citizenTickets.length === 0 || isGeneratingAiTriage) return;
+    setIsGeneratingAiTriage(true);
+    setAiTriageOutput('');
+    try {
+      const result = await webLlmService.generateRealCommandTriage(citizenTickets, (tokenChunk) => {
+        setAiTriageOutput(tokenChunk);
+      });
+      setAiTriageOutput(result);
+    } catch (err: any) {
+      setAiTriageOutput(`⚠️ Error connecting to local Qwen: ${err.message}\n\nPlease run 'ollama run qwen2.5:0.5b' in PowerShell.`);
+    } finally {
+      setIsGeneratingAiTriage(false);
+    }
+  };
 
   if (citizenTickets.length === 0 && !showHistory) {
     return (
@@ -154,11 +177,41 @@ export const CitizenRequestsPanel: React.FC<CitizenRequestsPanelProps> = ({ onTr
               </div>
             </div>
 
-            <div className="text-[11px] text-[#9CA6A0] bg-[#171A19] p-2 rounded-lg border border-[#333b37] flex items-start gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#879B54] shrink-0 mt-0.5" />
-              <span>
-                <strong className="text-[#879B54]">AI Recommendation:</strong> Prioritize dispatch of {selectedUnit} to {citizenTickets[0]?.incidentType === 'MEDICAL' ? 'Medical Casualty (Life-Threatening)' : citizenTickets[0]?.incidentType === 'TRAPPED' ? 'Structural Collapse Trap' : 'Sector Evacuation'} (Ticket #{citizenTickets[0]?.ticketId}).
-              </span>
+            <div className="text-[11px] text-[#9CA6A0] bg-[#171A19] p-2.5 rounded-lg border border-[#333b37] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-[#879B54] font-bold">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Tactical AI Triage Analysis
+                </span>
+                <button
+                  type="button"
+                  disabled={isGeneratingAiTriage}
+                  onClick={handleGenerateRealTriage}
+                  className="px-2.5 py-1 rounded-md bg-[#879B54]/20 hover:bg-[#879B54]/30 text-[#879B54] border border-[#879B54]/40 text-[10px] font-mono font-bold flex items-center gap-1 transition-all"
+                >
+                  {isGeneratingAiTriage ? (
+                    <>
+                      <RefreshCw className="w-3 h-3 animate-spin" />
+                      <span>Qwen Computing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-3 h-3" />
+                      <span>Run Real Qwen 2.5 Triage</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {aiTriageOutput ? (
+                <div className="p-2 rounded bg-[#242927] border border-[#879B54]/30 text-[11px] text-[#E8E6DE] font-mono whitespace-pre-wrap leading-relaxed">
+                  {aiTriageOutput}
+                </div>
+              ) : (
+                <div className="text-[10px] text-[#9CA6A0] italic">
+                  Click "Run Real Qwen 2.5 Triage" to stream on-device neural triage analysis of active mesh packets.
+                </div>
+              )}
             </div>
           </div>
         )}

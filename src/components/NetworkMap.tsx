@@ -277,11 +277,11 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({ onNodeSelect }) => {
     showQueueBadges,
   ]);
 
-  // Helper: Draw 2D Background Grid
+  // Helper: Draw 2D Background Grid & India Sector Markings
   const drawGrid = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-    ctx.strokeStyle = '#242927';
+    ctx.strokeStyle = '#202624';
     ctx.lineWidth = 1;
-    const step = 50;
+    const step = 60;
 
     for (let x = -w; x < w; x += step) {
       ctx.beginPath();
@@ -296,6 +296,16 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({ onNodeSelect }) => {
       ctx.lineTo(w, y);
       ctx.stroke();
     }
+
+    // India Sector Military Topography Watermark
+    ctx.save();
+    ctx.font = '700 13px "JetBrains Mono", monospace';
+    ctx.fillStyle = 'rgba(135, 155, 84, 0.12)'; // Operational Olive subtle watermark
+    ctx.fillText('🇮🇳 DISASTER RELIEF GRID • SECTOR 01 (RAJASTHAN CORRIDOR)', 40, 50);
+    ctx.font = '500 10px "JetBrains Mono", monospace';
+    ctx.fillStyle = 'rgba(156, 166, 160, 0.12)';
+    ctx.fillText('BASE GPS FIX: 26.9124° N, 75.7873° E • HARDWARE RADIO MESH (0 KB INTERNET)', 40, 68);
+    ctx.restore();
   };
 
   // Helper: Draw Hazard Zones

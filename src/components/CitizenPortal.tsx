@@ -3,8 +3,10 @@ import { useMeshStore } from '../store/useMeshStore';
 import type { MessageType } from '../models/Packet';
 import { OfflineLLMModal } from './OfflineLLMModal';
 import { OfflineMapModal } from './OfflineMapModal';
+import { RealTimeOfflineMapModal } from './RealTimeOfflineMapModal';
 import { SurvivalGuideModal } from './SurvivalGuideModal';
-import { EdgeNLPEngine, type StructuredSosMicroFrame } from '../ai/EdgeNLPEngine';
+import type { StructuredSosMicroFrame } from '../ai/EdgeNLPEngine';
+import { webLlmService } from '../services/webLlmService';
 import { 
   Check, 
   Radio, 
@@ -25,7 +27,8 @@ import {
   Activity, 
   Compass, 
   AlertTriangle,
-  Sparkles
+  Sparkles,
+  Navigation
 } from 'lucide-react';
 
 interface CitizenPortalProps {
@@ -42,6 +45,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = () => {
 
   // Modals
   const [isLlmModalOpen, setIsLlmModalOpen] = useState<boolean>(false);
+  const [isRealTimeMapOpen, setIsRealTimeMapOpen] = useState<boolean>(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState<boolean>(false);
   const [isGuideModalOpen, setIsGuideModalOpen] = useState<boolean>(false);
   const [guideCategory, setGuideCategory] = useState<string>('bleeding');
@@ -60,21 +64,31 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = () => {
   // Natural Language Edge SLM State
   const [nlEmergencyInput, setNlEmergencyInput] = useState<string>('I am trapped on the roof with 3 kids and water is rising fast, my arm is broken');
   const [parsedMicroFrame, setParsedMicroFrame] = useState<StructuredSosMicroFrame | null>(null);
+  const [isAiParsing, setIsAiParsing] = useState<boolean>(false);
+  const [aiParsingError, setAiParsingError] = useState<string>('');
 
-  const handleAutoParseNl = () => {
-    if (!nlEmergencyInput.trim()) return;
-    const parsed = EdgeNLPEngine.parseEmergencyText(nlEmergencyInput);
-    setParsedMicroFrame(parsed);
-    setSelectedType(parsed.incidentType);
-    setAdultCount(parsed.victimCount.adults);
-    setChildCount(parsed.victimCount.children);
-    setElderlyCount(parsed.victimCount.elderly);
-    setIncludeInjuries(parsed.hasInjuries);
-    if (parsed.injuryDescription) {
-      setInjuryNotes(parsed.injuryDescription);
-    }
-    if (parsed.locationDetails) {
-      setLocationNote(parsed.locationDetails);
+  const handleAutoParseNl = async () => {
+    if (!nlEmergencyInput.trim() || isAiParsing) return;
+    setIsAiParsing(true);
+    setAiParsingError('');
+    try {
+      const parsed = await webLlmService.parseEmergencyPromptWithRealLLM(nlEmergencyInput);
+      setParsedMicroFrame(parsed);
+      setSelectedType(parsed.incidentType);
+      setAdultCount(parsed.victimCount.adults);
+      setChildCount(parsed.victimCount.children);
+      setElderlyCount(parsed.victimCount.elderly);
+      setIncludeInjuries(parsed.hasInjuries);
+      if (parsed.injuryDescription) {
+        setInjuryNotes(parsed.injuryDescription);
+      }
+      if (parsed.locationDetails) {
+        setLocationNote(parsed.locationDetails);
+      }
+    } catch (err: any) {
+      setAiParsingError(err.message || 'Failed to connect to local Ollama. Run: ollama run qwen2.5:0.5b');
+    } finally {
+      setIsAiParsing(false);
     }
   };
 
@@ -203,7 +217,30 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = () => {
                 </span>
               </button>
 
-              {/* Button 2: Offline Map & Shelters */}
+              {/* Button 2: Real-Time Offline GPS & Leaflet Map */}
+              <button
+                type="button"
+                onClick={() => setIsRealTimeMapOpen(true)}
+                className="w-full p-3 rounded-xl bg-[#F5F3EE] hover:bg-[#ded8cd] border border-[#d8d1c3] hover:border-[#3F8F78]/50 text-left flex items-center justify-between transition-all group shadow-sm"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#3F8F78] text-[#171A19] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                    <Navigation className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-xs text-[#173F35] flex items-center gap-1">
+                      Real-Time GPS Map
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#3F8F78] animate-ping" />
+                    </h4>
+                    <p className="text-[10px] text-[#6F8F7D] font-mono">Live Sat Fix & Leaflet GIS</p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-[#3F8F78] bg-[#3F8F78]/15 px-2 py-0.5 rounded-full">
+                  Live GPS
+                </span>
+              </button>
+
+              {/* Button 3: Offline India Vector Map & Regional Shelters */}
               <button
                 type="button"
                 onClick={() => setIsMapModalOpen(true)}
@@ -214,12 +251,12 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = () => {
                     <Compass className="w-5 h-5 text-[#8da999]" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-xs text-[#173F35]">Offline Map & Shelters</h4>
-                    <p className="text-[10px] text-[#6F8F7D] font-mono">Vector GPS & Safe Camps</p>
+                    <h4 className="font-bold text-xs text-[#173F35]">Offline India Grid</h4>
+                    <p className="text-[10px] text-[#6F8F7D] font-mono">National Relief Camps</p>
                   </div>
                 </div>
                 <span className="text-[10px] font-bold text-[#173F35] bg-[#173F35]/10 px-2 py-0.5 rounded-full">
-                  Locate
+                  India Map
                 </span>
               </button>
 
@@ -456,18 +493,38 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = () => {
                 />
                 <button
                   type="button"
+                  disabled={isAiParsing || !nlEmergencyInput.trim()}
                   onClick={handleAutoParseNl}
-                  className="px-4 py-2.5 rounded-xl bg-[#173F35] hover:bg-[#102d26] text-[#F5F3EE] font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all shrink-0"
+                  className="px-4 py-2.5 rounded-xl bg-[#173F35] hover:bg-[#102d26] disabled:opacity-50 text-[#F5F3EE] font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all shrink-0"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-[#8da999]" />
-                  <span>Auto-Parse SOS</span>
+                  {isAiParsing ? (
+                    <>
+                      <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Qwen 2.5 Parsing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5 text-[#8da999]" />
+                      <span>Auto-Parse SOS</span>
+                    </>
+                  )}
                 </button>
               </div>
+
+              {aiParsingError && (
+                <div className="p-2.5 bg-[#A83F35]/10 border border-[#A83F35]/30 rounded-xl text-[11px] font-mono text-[#A83F35] flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold block">Local Qwen Connection Notice:</span>
+                    <span>{aiParsingError}</span>
+                  </div>
+                </div>
+              )}
 
               {parsedMicroFrame && (
                 <div className="p-3 bg-[#F5F3EE] border border-[#d8d1c3] rounded-xl text-[11px] font-mono space-y-1 text-[#173F35]">
                   <div className="flex items-center justify-between font-bold">
-                    <span>✓ SLM Parsed (Confidence: {(parsedMicroFrame.confidenceScore * 100).toFixed(0)}%)</span>
+                    <span>✓ Real Qwen 2.5 Parsed (Confidence: {(parsedMicroFrame.confidenceScore * 100).toFixed(0)}%)</span>
                     <span className="text-[10px] text-[#C65D32]">Priority Tier {parsedMicroFrame.priority}</span>
                   </div>
                   <div className="text-[10px] text-[#6F8F7D] truncate">
@@ -709,13 +766,19 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = () => {
         onClose={() => setIsLlmModalOpen(false)}
       />
 
-      {/* MODAL 2: Offline Disaster Map & Relief Shelters */}
+      {/* MODAL 2: Real-Time Offline Leaflet Map (Hardware GPS + Live Telemetry) */}
+      <RealTimeOfflineMapModal
+        isOpen={isRealTimeMapOpen}
+        onClose={() => setIsRealTimeMapOpen(false)}
+      />
+
+      {/* MODAL 3: Offline Disaster India Vector Map & Relief Shelters */}
       <OfflineMapModal
         isOpen={isMapModalOpen}
         onClose={() => setIsMapModalOpen(false)}
       />
 
-      {/* MODAL 3: Emergency Survival & First-Aid Manual */}
+      {/* MODAL 4: Emergency Survival & First-Aid Manual */}
       <SurvivalGuideModal
         isOpen={isGuideModalOpen}
         initialCategory={guideCategory}
